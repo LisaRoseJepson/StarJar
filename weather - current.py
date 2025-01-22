@@ -3,6 +3,7 @@ from network_manager import NetworkManager
 import uasyncio
 import urequests
 import time
+import gc
 import plasma
 from plasma import plasma_stick
 # Random functions! randrange is for picking integers from a range, and uniform is for floats.
@@ -23,17 +24,9 @@ NUM_LEDS = 50
 # Set your latitude/longitude here (find yours by right clicking in Google Maps!)
 LAT = 53.659960 # Southport
 LNG = -2.994775
-#LAT = 53.552351 # Lathom
-#LNG = -2.8192404
-#LAT = 53.424525 # Didsbury
-#LNG = -2.240877
-#LAT = 27.734699 # Libya
-#LNG = 17.803204
-#LAT = -37.787233 # Melbourne
-#LNG = 144.955688
 TIMEZONE = "auto"  # determines time zone from lat/long
 
-URL = "https://api.open-meteo.com/v1/forecast?latitude=" + str(LAT) + "&longitude=" + str(LNG) + "&current_weather=true&timezone=" + TIMEZONE
+URL = "http://api.open-meteo.com/v1/forecast?latitude=" + str(LAT) + "&longitude=" + str(LNG) + "&current_weather=true&timezone=" + TIMEZONE
 UPDATE_INTERVAL = 900  # refresh interval in secs. Be nice to free APIs!
 
 # Weather codes from https://open-meteo.com/en/docs#:~:text=WMO%20Weather%20interpretation%20codes%20(WW)
@@ -96,7 +89,6 @@ def get_data():
     # open the json data
     j = r.json()
     print("Data obtained!")
-    r.close()
 
     # parse relevant data from JSON
     current = j["current_weather"]
@@ -108,6 +100,8 @@ def get_data():
 Conditions = {WEATHERCODES[weathercode]}
 Last Open-Meteo update: {datetime_arr[0]}, {datetime_arr[1]}
     """)
+
+    r.close()
 
     # flash the onboard LED after getting data
     pico_led.value(True)
@@ -249,9 +243,6 @@ timer = Timer(-1)
 timer.init(period=UPDATE_INTERVAL * 1000, mode=Timer.PERIODIC, callback=lambda t: get_data())
 
 while True:
-    
-#    weathercode = 82
-    
     # do some fancy stuff with the LEDs based on the weather code
     if 0 <= weathercode <= 1:
         clear()
@@ -268,3 +259,4 @@ while True:
 
     move_to_target()   # nudge our current colours closer to the target colours
     display_current()  # display current colours to strip
+    gc.collect()
